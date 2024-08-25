@@ -1,0 +1,149 @@
+﻿@page "/Doctors"
+@using MySqlConnector;
+@using Hospital_Management_System.Data
+@using Hospital_Management_System.Objects
+@inject NavigationManager NavigationManager
+
+@code {
+    DatabaseManagement db = new DatabaseManagement();
+    private string searchTerm = "";
+    private int selectedDepartmentId = 0;
+    private int expandedDoctorId = 0;
+    private List<Doctor> searchResults = new List<Doctor>();
+    private List<Department> departments = new List<Department>();
+
+    protected override void OnInitialized()
+    {
+        departments = db.GetDepartments();
+        SearchDoctors(); // Initialize with some data on page load.
+    }
+
+    private void ToggleDoctorDetails(int doctorId)
+    {
+        if (expandedDoctorId == doctorId)
+            expandedDoctorId = 0;  // Collapse if it's already expanded
+        else
+            expandedDoctorId = doctorId;  // Expand the clicked doctor details
+    }
+
+    private void SearchDoctors()
+    {
+        searchResults = db.SearchDoctorsByName(searchTerm);
+
+        if (selectedDepartmentId != 0)
+        {
+            searchResults = searchResults.Where(d => d.DepartmentId == selectedDepartmentId).ToList();
+        }
+    }
+
+    private void OnSearchInput(ChangeEventArgs e)
+    {
+        searchTerm = e.Value.ToString();
+        SearchDoctors();
+    }
+
+    private void OnDepartmentChanged(ChangeEventArgs e)
+    {
+        selectedDepartmentId = int.Parse(e.Value.ToString());
+        SearchDoctors();
+    }
+
+    private void GoToAddDoctorPage()
+    {
+        NavigationManager.NavigateTo("/addDoctors");
+    }
+
+
+    private int doctorPendingDeletionId = 0;
+
+    private void StartDoctorDeletion(int doctorId)
+    {
+        doctorPendingDeletionId = doctorId;
+    }
+
+    private void ConfirmDeleteDoctor()
+    {
+        if (doctorPendingDeletionId != 0)
+        {
+            db.DeleteDoctor(doctorPendingDeletionId);
+            SearchDoctors();
+            doctorPendingDeletionId = 0;  // Reset after deletion
+        }
+    }
+
+    private void CancelDoctorDeletion()
+    {
+        doctorPendingDeletionId = 0;  // Just reset without doing anything
+    }
+}
+
+<div class="container">
+    <div class="search-section">
+        <div>
+            <label for="search">Search Doctor:</label>
+            <input id="search" placeholder="Type doctor's name..." @bind="searchTerm" @oninput="OnSearchInput" />
+        </div>
+
+        <div>
+            <label for="departmentFilter">Filter by Department:</label>
+            <select id="departmentFilter" value="@selectedDepartmentId" @onchange="OnDepartmentChanged">
+                <option value="0">All Departments</option>
+                @foreach (var department in departments)
+                {
+                    <option value="@department.DepartmentId">@department.DepartmentName</option>
+                }
+            </select>
+        </div>
+
+        <div class="NavBarButton">
+            <button class="nav-button AddButton" @onclick="GoToAddDoctorPage">Add Doctor</button>
+        </div>
+    </div>
+
+    <div>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Department</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var doctor in searchResults)
+                {
+                <tr @onclick="() => ToggleDoctorDetails(doctor.DoctorId)" class="doctor-row @(expandedDoctorId == doctor.DoctorId ? "expanded" : "")">
+                    <td>@doctor.DoctorId</td>
+                    <td>@(doctor.DFirstName + " " + doctor.DLastName)</td>
+                    <td>@doctor.DepartmentId</td>
+                </tr>
+                <tr class="expanded-staff-details-row @(expandedDoctorId == doctor.DoctorId ? "show" : "")">
+                    <td colspan="3">
+                        <div class="expanded-staff-details">
+                                <div class="expanded-staff-details-header">
+                                    <span class="staff-name">@doctor.DFirstName @doctor.DLastName</span>
+                                    <div>
+                                        @if (doctorPendingDeletionId == doctor.DoctorId)
+                                        {
+                                            <button @onclick="ConfirmDeleteDoctor" class="btn-action confirm-delete">Confirm Delete</button>
+                                            <button @onclick="CancelDoctorDeletion" class="btn-action cancel-delete">Cancel</button>
+                                        }
+                                        else
+                                        {
+                                            <button @onclick="() => StartDoctorDeletion(doctor.DoctorId)" class="btn-action">Delete</button>
+                                        }
+                                    </div>
+                                </div>
+                            <p><strong>Date of Birth:</strong> @doctor.DDateOfBirth.ToShortDateString() (@doctor.Age years old)</p>
+                            <p><strong>Phone Number:</strong> @doctor.DPhoneNumber</p>
+                            <p><strong>Address:</strong> @doctor.DAddress, @doctor.DCity, @doctor.DProvince</p>
+                            <p><strong>Email Address:</strong> @doctor.DEmailAddr</p>
+                            <p><strong>Department ID:</strong> @doctor.DepartmentId</p>
+                        </div>
+                    </td>
+                </tr>
+                }
+        </tbody>
+    </table>
+</div>
+</div>

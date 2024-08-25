@@ -1,0 +1,109 @@
+﻿@page "/Patients"
+@using MySqlConnector;
+@using Hospital_Management_System.Data
+@using Hospital_Management_System.Objects
+@inject NavigationManager NavigationManager
+
+
+@code {
+    DatabaseManagement db = new DatabaseManagement();
+    private string searchTerm = "";
+    private string selectedAgeRange = "All Ages";
+    private List<Patient> searchResults = new List<Patient>();
+
+    protected override void OnInitialized()
+    {
+        SearchPatients(); // Initialize with some data on page load.
+    }
+
+    private void SearchPatients()
+    {
+        searchResults = db.SearchPatientsByName(searchTerm);
+
+        if (selectedAgeRange != "All Ages")
+        {
+            var ages = selectedAgeRange.Split('-');
+            var minAge = int.Parse(ages[0]);
+            var maxAge = int.Parse(ages[1]);
+
+            searchResults = searchResults.Where(p => p.Age >= minAge && p.Age <= maxAge).ToList();
+        }
+    }
+
+    private void OnSearchInput(ChangeEventArgs e)
+    {
+        searchTerm = e.Value.ToString();
+        SearchPatients();
+    }
+
+    private void OnAgeRangeChanged(ChangeEventArgs e)
+    {
+        selectedAgeRange = e.Value.ToString();
+        SearchPatients();
+    }
+
+    private void GoToPatientDetails(int PatientId)
+    {
+        NavigationManager.NavigateTo($"/PatientDetails/{PatientId}");
+    }
+
+    private void GoToAddPatientPage()
+    {
+        NavigationManager.NavigateTo("/addPatients");
+    }
+}
+
+
+<div class="container">
+    <div class="search-section">
+        <div>
+            <label for="search">Search Patient:</label>
+            <input id="search" placeholder="Type Patient's name..." @bind="searchTerm" @oninput="OnSearchInput" />
+            
+        </div>
+
+        <div>
+            <label for="ageFilter">Filter by Age:</label>
+            <select id="ageFilter" value="@selectedAgeRange" @onchange="OnAgeRangeChanged">
+                <option value="All Ages">All Ages</option>
+                <option value="0-9">0-9</option>
+                <option value="10-19">10-19</option>
+                <option value="20-29">20-29</option>
+                <option value="30-39">30-39</option>
+                <option value="40-49">40-49</option>
+                <option value="50-59">50-59</option>
+                <option value="60-69">60-69</option>
+                <option value="70-79">70-79</option>
+                <option value="80-89">80-89</option>
+                <option value="90+">90+</option>
+            </select>
+        </div>
+
+        <div class="NavBarButton">
+            <button class="nav-button AddButton" @onclick="GoToAddPatientPage">Add Patient</button>
+        </div>
+    </div>
+
+
+    <div>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Age</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var patient in searchResults)
+                {
+                    <tr @onclick="() => GoToPatientDetails(patient.PatientId)">
+                        <td>@patient.PatientId</td>
+                        <td>@(patient.PFirstName + " " + patient.PLastName)</td>
+                        <td>@patient.Age</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

@@ -1,0 +1,45 @@
+﻿@page "/addDepartments"
+@using Hospital_Management_System.Objects
+@using Hospital_Management_System.Data
+@inject NavigationManager NavManager
+
+<div class="container mt-5">
+    <h1>Add New Department</h1>
+    <form @onsubmit:preventDefault="true" @onsubmit="AddDepartmentToDatabase" autocomplete="nope">
+
+        <!-- Department Name -->
+        <div class="mb-3">
+            <label for="departmentName">Department Name:</label>
+            <input class="validate-input" @bind="NewDepartment.DepartmentName" id="departmentName" placeholder="Department Name" required maxlength="50" />
+        </div>
+
+        <button class="nav-button" @onclick="AddDepartmentToDatabase" disabled="@(!CanSubmit())">Add Department</button>
+    </form>
+</div>
+
+@code {
+    private DatabaseManagement db = new DatabaseManagement();
+    private Department NewDepartment { get; set; } = new Department();
+
+    private bool CanSubmit()
+    {
+        bool isNameUnique = db.IsDepartmentNameUnique(NewDepartment.DepartmentName);
+
+        return isNameUnique && !string.IsNullOrWhiteSpace(NewDepartment.DepartmentName);
+    }
+
+    private void DepartmentNameChanged(ChangeEventArgs e)
+    {
+        bool isNameUnique = db.IsDepartmentNameUnique(NewDepartment.DepartmentName);
+        if (!isNameUnique)
+            // You might need to add a display error message if you want feedback to the user.
+            // For now, this code simply checks uniqueness.
+            ;  // Do nothing (or add logic here if necessary).
+    }
+
+    private void AddDepartmentToDatabase()
+    {
+        db.AddDepartment(NewDepartment);
+        NavManager.NavigateTo("/confirmation/Department");
+    }
+}

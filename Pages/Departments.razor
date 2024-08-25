@@ -1,0 +1,54 @@
+﻿@page "/Departments"
+@using Hospital_Management_System.Data
+@using Hospital_Management_System.Objects
+@inject NavigationManager NavigationManager
+
+@code {
+    DatabaseManagement db = new DatabaseManagement();
+    private List<Department> allDepartments = new List<Department>();
+
+    protected override void OnInitialized()
+    {
+        allDepartments = db.GetDepartments();
+    }
+
+    private void GoToDepartmentDetails(int departmentId)
+    {
+        NavigationManager.NavigateTo($"/DepartmentDetails/{departmentId}");
+    }
+
+    private void GoToAddDepartmentPage()
+    {
+        NavigationManager.NavigateTo("/addDepartments");
+    }
+}
+
+<div class="container">
+    <div class="search-section">
+        <h1>
+            Departments
+        </h1>
+        <label></label>
+        <div class="NavBarButton">
+            <button class="nav-button AddButton" @onclick="GoToAddDepartmentPage">Add Department</button>
+        </div>
+    </div>
+    <table class="department-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Department Name</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var department in allDepartments)
+            {
+                <tr @onclick="() => GoToDepartmentDetails(department.DepartmentId)">
+                    <td>@department.DepartmentId</td>
+                    <td>@department.DepartmentName</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+

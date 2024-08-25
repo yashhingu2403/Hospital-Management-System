@@ -1,0 +1,131 @@
+﻿@page "/Staff"
+@using MySqlConnector;
+@using Hospital_Management_System.Data
+@using Hospital_Management_System.Objects
+@inject NavigationManager NavigationManager
+
+
+@code {
+    DatabaseManagement db = new DatabaseManagement();
+    private string searchTerm = "";
+    private int selectedDepartmentId = 0;
+    private List<Staff> searchResults = new List<Staff>();
+    private List<Department> departments = new List<Department>();
+
+    protected override void OnInitialized()
+    {
+        departments = db.GetDepartments();
+        SearchStaffs(); // Initialize with some data on page load.
+    }
+
+    private void SearchStaffs()
+    {
+        searchResults = db.SearchStaffByName(searchTerm);
+
+        // If a department is selected, filter by department
+        if (selectedDepartmentId != 0)
+        {
+            searchResults = searchResults.Where(d => d.DepartmentId == selectedDepartmentId).ToList();
+        }
+    }
+
+    private void OnSearchInput(ChangeEventArgs e)
+    {
+        searchTerm = e.Value.ToString();
+        SearchStaffs();
+    }
+
+    private void OnDepartmentChanged(ChangeEventArgs e)
+    {
+        selectedDepartmentId = int.Parse(e.Value.ToString());
+        SearchStaffs();
+    }
+
+    private void GoToAddStaffPage()
+    {
+        NavigationManager.NavigateTo("/addStaffs");
+    }
+}
+
+<div class="container">
+    <div class="search-section">
+        <div>
+            <label for="search">Search Staff:</label>
+            <input id="search" placeholder="Type Staff's name..." @bind="searchTerm" @oninput="OnSearchInput" />
+            
+        </div>
+
+        <div>
+            <label for="departmentFilter">Filter by Department:</label>
+            <select id="departmentFilter" value="@selectedDepartmentId" @onchange="OnDepartmentChanged">
+                <option value="0">All Departments</option>
+                @foreach (var department in departments)
+                {
+                    <option value="@department.DepartmentId">@department.DepartmentName</option>
+                }
+            </select>
+        </div>
+
+        <div class="NavBarButton">
+            <button class="nav-button AddButton" @onclick="GoToAddStaffPage">Add Staff</button>
+        </div>
+    </div>
+
+    <div>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Department</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var Staff in searchResults)
+                {
+                    <tr @onclick="() => ToggleStaffDetails(Staff.StaffId)" class="staff-row @(expandedStaffId == Staff.StaffId ? "expanded" : "")">
+                        <td>@Staff.StaffId</td>
+                        <td>@(Staff.SFirstName + " " + Staff.SLastName)</td>
+                        <td>@Staff.DepartmentId</td>
+                    </tr>
+                    <tr class="expanded-staff-details-row @(expandedStaffId == Staff.StaffId ? "show" : "")">
+                        <td colspan="3">
+                            <div class="expanded-staff-details">
+                                <div class="expanded-staff-details-header">
+                                    <span class="staff-name">@Staff.SFirstName @Staff.SLastName</span>
+                                    <div>
+                                        <button class="btn-action">Action 1</button>
+                                        <button class="btn-action">Action 2</button>
+                                    </div>
+                                </div>
+                                    <p><strong>Position:</strong> @Staff.SPosition</p>
+                                    <p><strong>Date of Birth:</strong> @Staff.SDateOfBirth.ToShortDateString() (@Staff.Age years old)</p>
+                                    <p><strong>Phone Number:</strong> @Staff.SPhoneNumber</p>
+                                    <p><strong>Address:</strong> @Staff.SAddress, @Staff.SCity, @Staff.SProvince</p>
+                                    <p><strong>Email Address:</strong> @Staff.SEmailAddr</p>
+                                    <p><strong>Department ID:</strong> @Staff.DepartmentId</p>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@code {
+    private int expandedStaffId = 0;
+
+    private void ToggleStaffDetails(int sId)
+    {
+        if (expandedStaffId == sId)
+            expandedStaffId = 0;  // Collapse if it's already expanded
+        else
+            expandedStaffId = sId;  // Expand the clicked staff details
+    }
+
+ 
+
+}

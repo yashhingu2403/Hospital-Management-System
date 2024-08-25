@@ -1,0 +1,191 @@
+@page "/addDoctors"
+@using Hospital_Management_System.Objects
+@using Hospital_Management_System.Data
+@inject NavigationManager NavManager
+
+<div class="container mt-5">
+    <h1>Add New Doctor</h1>
+    <form @onsubmit:preventDefault="true" @onsubmit="AddDoctorToDatabase" autocomplete="nope">
+
+        <!-- First Name and Last Name -->
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <label for="firstName">First Name:</label>
+                <input class="validate-input" @bind="NewDoctor.DFirstName" id="firstName" placeholder="First Name" required maxlength="20" />
+            </div>
+            <div class="col-md-6">
+                <label for="lastName">Last Name:</label>
+                <input class="validate-input" @bind="NewDoctor.DLastName" id="lastName" placeholder="Last Name" required maxlength="20" />
+            </div>
+        </div>
+
+        <!-- Date of Birth and Phone Number -->
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <label for="dob">Date of Birth:</label>
+                <input class="validate-input" type="date" @bind="NewDoctor.DDateOfBirth" id="dob" required />
+            </div>
+            <div class="col-md-6">
+                <label for="phone">
+                    Phone Number: 
+                </label>
+                <input class="validate-input" type="tel" @bind="NewDoctor.DPhoneNumber" @oninput="ValidatePhoneNumber" id="phone" placeholder="2046197621" minlength="10" maxlength="10" required>
+                <div class="text-danger">@phoneErrorMessage</div>
+            </div>
+        </div>
+
+
+        <!-- Address -->
+        <div class="mb-3">
+            <label for="address">Address:</label>
+            <input class="validate-input" @bind="NewDoctor.DAddress" id="address" placeholder="Address" required maxlength="100" />
+        </div>
+
+        <!-- City and Province -->
+        <!-- City and Province -->
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <label for="city">City:</label>
+                <input class="validate-input" @bind="NewDoctor.DCity" id="city" placeholder="City" required maxlength="20"/>
+            </div>
+            <div class="col-md-6">
+                <label for="province">Province:</label>
+                <select class="validate-input" @bind="NewDoctor.DProvince" id="province" required>
+                    <option value="">Select Province</option>
+                    <option value="AB">Alberta</option>
+                    <option value="BC">British Columbia</option>
+                    <option value="MB">Manitoba</option>
+                    <option value="NB">New Brunswick</option>
+                    <option value="NL">Newfoundland and Labrador</option>
+                    <option value="NS">Nova Scotia</option>
+                    <option value="ON">Ontario</option>
+                    <option value="PE">Prince Edward Island</option>
+                    <option value="QC">Quebec</option>
+                    <option value="SK">Saskatchewan</option>
+                    <option value="YT">Yukon</option>
+                    <option value="NT">Northwest Territories</option>
+                    <option value="NU">Nunavut</option>
+                </select>
+            </div>
+        </div>
+
+
+        <!-- Email Address -->
+        <div class="mb-3">
+            <label for="emailAddr">
+                Email:
+            </label>
+            <input class="validate-input" type="email" @bind="NewDoctor.DEmailAddr" @oninput="ValidateEmail" id="emailAddr" placeholder="Email Address" required pattern="^[A-Za-z0-9._%-]+@@[A-Za-z0-9.-]+\.[A-Za-z]{2,4}$" />
+            <div class="text-danger"> @emailErrorMessage</div>
+        </div>
+
+        <!-- Department Dropdown -->
+        <div class="mb-3">
+            <label for="deptId">Department:</label>
+            <select class="validate-input" @bind="NewDoctor.DepartmentId" id="deptId" placeholder="Select Department" required>
+                @foreach (var dept in Departments)
+                {
+                    <option value="@dept.DepartmentId">@dept.DepartmentName</option>
+                }
+            </select>
+        </div>
+
+        <!-- Submit Button -->
+        <button class="nav-button" @onclick="AddDoctorToDatabase" disabled="@(!CanSubmit())">Add Doctor</button>
+    </form>
+</div>
+
+@code {
+    private DatabaseManagement db = new DatabaseManagement();
+    private Doctor NewDoctor { get; set; } = new Doctor() { DDateOfBirth = DateTime.Today };
+    private List<Department> Departments = new List<Department>();
+    private string emailErrorMessage = "";
+    private string phoneErrorMessage = "";
+
+    protected override void OnInitialized()
+    {
+        Departments = db.GetDepartments();
+    }
+
+    private bool CanSubmit()
+    {
+        string tableName = "Doctors"; 
+        bool isEmailUnique = db.IsEmailUnique(NewDoctor.DEmailAddr, tableName);
+        bool isPhoneUnique = db.IsPhoneNumberUnique(NewDoctor.DPhoneNumber, tableName);
+        
+        return isEmailUnique &&
+            isPhoneUnique &&
+            !string.IsNullOrWhiteSpace(NewDoctor.DFirstName) &&
+            !string.IsNullOrWhiteSpace(NewDoctor.DLastName) &&
+            NewDoctor.DDateOfBirth != new DateTime() &&
+            NewDoctor.DPhoneNumber > 999999999 && NewDoctor.DPhoneNumber < 10000000000 &&
+            !string.IsNullOrWhiteSpace(NewDoctor.DAddress) &&
+            !string.IsNullOrWhiteSpace(NewDoctor.DCity) &&
+            !string.IsNullOrWhiteSpace(NewDoctor.DProvince) &&
+            !string.IsNullOrWhiteSpace(NewDoctor.DEmailAddr) &&
+            NewDoctor.DepartmentId != 0 &&
+            NewDoctor.DFirstName.Length <= 20 &&
+            NewDoctor.DLastName.Length <= 20 &&
+            NewDoctor.DAddress.Length <= 100 &&
+            NewDoctor.DCity.Length <= 20 &&
+            NewDoctor.DProvince.Length <= 20 &&
+            NewDoctor.DEmailAddr.Length <= 50;
+    }
+
+    private void PhoneNumberChanged(ChangeEventArgs e)
+    {
+        bool isPhoneUnique = db.IsPhoneNumberUnique(NewDoctor.DPhoneNumber, "Doctors");
+        if (!isPhoneUnique)
+            phoneErrorMessage = "This phone number is already in use.";
+        else
+            phoneErrorMessage = "";
+    }
+
+    private void EmailChanged(ChangeEventArgs e)
+    {
+        bool isEmailUnique = db.IsEmailUnique(NewDoctor.DEmailAddr, "Doctors");
+        if (!isEmailUnique)
+            emailErrorMessage = "This email is already in use.";
+        else
+            emailErrorMessage = "";
+    }
+
+    private void ValidatePhoneNumber(ChangeEventArgs e)
+    {
+        if (string.IsNullOrWhiteSpace(e.Value?.ToString()))
+        {
+            phoneErrorMessage = "";
+            return; // Exit early if the input is empty or null.
+        }
+
+        try
+        {
+            NewDoctor.DPhoneNumber = Convert.ToInt64(e.Value);
+            bool isPhoneUnique = db.IsPhoneNumberUnique(NewDoctor.DPhoneNumber, "Doctors");
+            if (!isPhoneUnique)
+                phoneErrorMessage = "This phone number is already in use.";
+            else
+                phoneErrorMessage = "";
+        }
+        catch
+        {
+            phoneErrorMessage = "Invalid phone number format.";
+        }
+    }
+
+    private void ValidateEmail(ChangeEventArgs e)
+    {
+        NewDoctor.DEmailAddr = Convert.ToString(e.Value);
+        bool isEmailUnique = db.IsEmailUnique(NewDoctor.DEmailAddr, "Doctors");
+        if (!isEmailUnique)
+            emailErrorMessage = "This email is already in use.";
+        else
+            emailErrorMessage = "";
+    }
+
+    private void AddDoctorToDatabase()
+    {
+        db.AddDoctor(NewDoctor);
+        NavManager.NavigateTo("/confirmation/Doctor");
+    }
+}

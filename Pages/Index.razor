@@ -1,0 +1,38 @@
+﻿@page "/"
+
+<div class="index-container">
+    <h1>Calgary Hospital Management System</h1>
+
+    <div class="button-container">
+        <button @onclick="GoToDepartments" class="nav-button">Departments</button>
+        <button @onclick="GoToPatients" class="nav-button">Patients</button>
+        <button @onclick="GoToDoctors" class="nav-button">Doctors</button>
+        <button @onclick="GoToStaff" class="nav-button">Staff</button>
+    </div>
+</div>
+
+@code {
+    [Inject]
+    public NavigationManager Navigation { get; set; }
+
+    public void GoToDepartments()
+    {
+        Navigation.NavigateTo("/Departments");
+    }
+
+    private void GoToPatients()
+    {
+        Navigation.NavigateTo("/Patients");
+    }
+
+    private void GoToDoctors()
+    {
+        Navigation.NavigateTo("/Doctors");
+    }
+
+    private void GoToStaff()
+    {
+        Navigation.NavigateTo("/Staff");
+    }
+}
+

@@ -1,0 +1,79 @@
+﻿@page "/AddTreatment/{patientId:int}"
+@using MySqlConnector;
+@using Hospital_Management_System.Data
+@using Hospital_Management_System.Objects
+@inject NavigationManager NavigationManager
+
+@code {
+    [Parameter] public int PatientId { get; set; }
+
+    DatabaseManagement db = new DatabaseManagement();
+    private string doctorSearchTerm = "";
+    private List<Doctor> doctorSearchResults = new List<Doctor>();
+    private int selectedDoctorId = 0;
+
+    private string treatmentTitle = "";
+    private string treatmentNotes = "";
+    private string treatmentStatus = "";
+
+
+    private void SearchDoctors()
+    {
+        doctorSearchResults = db.SearchDoctorsByName(doctorSearchTerm);
+    }
+
+    private void OnDoctorSearchInput(ChangeEventArgs e)
+    {
+        doctorSearchTerm = e.Value.ToString();
+        SearchDoctors();
+    }
+
+    private void OnDoctorSelected(ChangeEventArgs e)
+    {
+        selectedDoctorId = int.Parse(e.Value.ToString());
+    }
+
+    private void addNewTreatment()
+    {
+        if (selectedDoctorId == 0 || string.IsNullOrEmpty(treatmentTitle) || string.IsNullOrEmpty(treatmentStatus))
+        {
+            // Validate and alert the user for necessary details.
+            return;
+        }
+
+        // Add your treatment creation logic here.
+    }
+}
+
+<div class="container">
+    <div class="search-section">
+        <div>
+            <label for="doctorSearch">Search Doctor:</label>
+            <input id="doctorSearch" placeholder="Type doctor's name..." @bind="doctorSearchTerm" @oninput="OnDoctorSearchInput" />
+
+            <select value="@selectedDoctorId" @onchange="OnDoctorSelected">
+                @foreach (var doctor in doctorSearchResults)
+                {
+                    <option value="@doctor.DoctorId">@doctor.DFirstName @doctor.DLastName</option>
+                }
+            </select>
+        </div>
+
+        <!-- Treatment Details Input -->
+        <div>
+            <label for="treatmentTitle">Treatment Title:</label>
+            <input id="treatmentTitle" @bind="treatmentTitle" />
+
+            <label for="treatmentStatus">Treatment Status:</label>
+            <select id="treatmentStatus" @bind="treatmentStatus">
+                <option value="CO">CO</option>
+                <option value="ON">ON</option>
+            </select>
+
+            <label for="treatmentNotes">Notes:</label>
+            <textarea id="treatmentNotes" @bind="treatmentNotes" maxlength="1000" rows="4"></textarea>
+        </div>
+
+        <button @onclick="addNewTreatment">Add Treatment</button>
+    </div>
+</div>

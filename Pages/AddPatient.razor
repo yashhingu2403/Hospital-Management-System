@@ -1,0 +1,173 @@
+﻿@page "/addPatients"
+@using Hospital_Management_System.Objects
+@using Hospital_Management_System.Data
+@inject NavigationManager NavManager
+
+<div class="container mt-5">
+    <h1>Add New Patient</h1>
+    <form @onsubmit:preventDefault="true" @onsubmit="AddPatientToDatabase" autocomplete="nope">
+
+        <!-- First Name and Last Name -->
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <label for="firstName">First Name:</label>
+                <input class="validate-input" @bind="NewPatient.PFirstName" id="firstName" placeholder="First Name" required maxlength="20" />
+            </div>
+            <div class="col-md-6">
+                <label for="lastName">Last Name:</label>
+                <input class="validate-input" @bind="NewPatient.PLastName" id="lastName" placeholder="Last Name" required maxlength="20" />
+            </div>
+        </div>
+
+        <!-- Date of Birth and Phone Number -->
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <label for="dob">Date of Birth:</label>
+                <input class="validate-input" type="date" @bind="NewPatient.PDateOfBirth" id="dob" required />
+            </div>
+            <div class="col-md-6">
+                <label for="phone">
+                    Phone Number: 
+                </label>
+                <input class="validate-input" type="tel" @bind="NewPatient.PPhoneNumber" @oninput="ValidatePhoneNumber" id="phone" placeholder="2046197621" minlength="10" maxlength="10" required>
+                <div class="text-danger">@phoneErrorMessage</div>
+            </div>
+        </div>
+
+
+        <!-- Address -->
+        <div class="mb-3">
+            <label for="address">Address:</label>
+            <input class="validate-input" @bind="NewPatient.PAddress" id="address" placeholder="Address" required maxlength="100" />
+        </div>
+
+        <!-- City and Province -->
+        <!-- City and Province -->
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <label for="city">City:</label>
+                <input class="validate-input" @bind="NewPatient.PCity" id="city" placeholder="City" required maxlength="20"/>
+            </div>
+            <div class="col-md-6">
+                <label for="province">Province:</label>
+                <select class="validate-input" @bind="NewPatient.PProvince" id="province" required>
+                    <option value="">Select Province</option>
+                    <option value="AB">Alberta</option>
+                    <option value="BC">British Columbia</option>
+                    <option value="MB">Manitoba</option>
+                    <option value="NB">New Brunswick</option>
+                    <option value="NL">Newfoundland and Labrador</option>
+                    <option value="NS">Nova Scotia</option>
+                    <option value="ON">Ontario</option>
+                    <option value="PE">Prince Edward Island</option>
+                    <option value="QC">Quebec</option>
+                    <option value="SK">Saskatchewan</option>
+                    <option value="YT">Yukon</option>
+                    <option value="NT">Northwest Territories</option>
+                    <option value="NU">Nunavut</option>
+                </select>
+            </div>
+        </div>
+
+
+        <!-- Email Address -->
+        <div class="mb-3">
+            <label for="emailAddr">
+                Email:
+            </label>
+            <input class="validate-input" type="email" @bind="NewPatient.PEmailAddr" @oninput="ValidateEmail" id="emailAddr" placeholder="Email Address" required pattern="^[A-Za-z0-9._%-]+@@[A-Za-z0-9.-]+\.[A-Za-z]{2,4}$" />
+            <div class="text-danger"> @emailErrorMessage</div>
+        </div>
+
+        <button class="nav-button" @onclick="AddPatientToDatabase" disabled="@(!CanSubmit())">Add Patient</button>
+    </form>
+</div>
+
+@code {
+    private DatabaseManagement db = new DatabaseManagement();
+    private Patient NewPatient { get; set; } = new Patient() { PDateOfBirth = DateTime.Today };
+    private string emailErrorMessage = "";
+    private string phoneErrorMessage = "";
+
+    private bool CanSubmit()
+    {
+        string tableName = "Patients";
+        bool isEmailUnique = db.IsEmailUnique(NewPatient.PEmailAddr, tableName);
+        bool isPhoneUnique = db.IsPhoneNumberUnique(NewPatient.PPhoneNumber, tableName);
+
+
+        return isEmailUnique &&
+            isPhoneUnique &&
+            !string.IsNullOrWhiteSpace(NewPatient.PFirstName) &&
+            !string.IsNullOrWhiteSpace(NewPatient.PLastName) &&
+            NewPatient.PDateOfBirth != new DateTime() &&
+            NewPatient.PPhoneNumber > 999999999 && NewPatient.PPhoneNumber < 10000000000 &&
+            !string.IsNullOrWhiteSpace(NewPatient.PAddress) &&
+            !string.IsNullOrWhiteSpace(NewPatient.PCity) &&
+            !string.IsNullOrWhiteSpace(NewPatient.PProvince) &&
+            !string.IsNullOrWhiteSpace(NewPatient.PEmailAddr) &&
+            NewPatient.PFirstName.Length <= 20 &&
+            NewPatient.PLastName.Length <= 20 &&
+            NewPatient.PAddress.Length <= 100 &&
+            NewPatient.PCity.Length <= 20 &&
+            NewPatient.PProvince.Length <= 20 &&
+            NewPatient.PEmailAddr.Length <= 50;
+    }
+
+    private void PhoneNumberChanged(ChangeEventArgs e)
+    {
+        bool isPhoneUnique = db.IsPhoneNumberUnique(NewPatient.PPhoneNumber, "Patients");
+        if (!isPhoneUnique)
+            phoneErrorMessage = "This phone number is already in use.";
+        else
+            phoneErrorMessage = "";
+    }
+
+    private void EmailChanged(ChangeEventArgs e)
+    {
+        bool isEmailUnique = db.IsEmailUnique(NewPatient.PEmailAddr, "Patients");
+        if (!isEmailUnique)
+            emailErrorMessage = "This email is already in use.";
+        else
+            emailErrorMessage = "";
+    }
+
+    private void ValidatePhoneNumber(ChangeEventArgs e)
+    {
+        if (string.IsNullOrWhiteSpace(e.Value?.ToString()))
+        {
+            phoneErrorMessage = "";
+            return; // Exit early if the input is empty or null.
+        }
+
+        try
+        {
+            NewPatient.PPhoneNumber = Convert.ToInt64(e.Value);
+            bool isPhoneUnique = db.IsPhoneNumberUnique(NewPatient.PPhoneNumber, "Patients");
+            if (!isPhoneUnique)
+                phoneErrorMessage = "This phone number is already in use.";
+            else
+                phoneErrorMessage = "";
+        }
+        catch
+        {
+            phoneErrorMessage = "Invalid phone number format.";
+        }
+    }
+
+    private void ValidateEmail(ChangeEventArgs e)
+    {
+        NewPatient.PEmailAddr = Convert.ToString(e.Value);
+        bool isEmailUnique = db.IsEmailUnique(NewPatient.PEmailAddr, "Patients");
+        if (!isEmailUnique)
+            emailErrorMessage = "This email is already in use.";
+        else
+            emailErrorMessage = "";
+    }
+
+    private void AddPatientToDatabase()
+    {
+        db.AddPatient(NewPatient);
+        NavManager.NavigateTo("/confirmation/Patient");
+    }
+}

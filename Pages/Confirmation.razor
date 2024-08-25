@@ -1,0 +1,31 @@
+﻿@page "/confirmation/{ItemType}"
+@inject NavigationManager NavManager
+
+@code {
+    [Parameter] public string ItemType { get; set; }
+
+    private void GoToAddNew()
+    {
+        NavManager.NavigateTo($"/add{ItemType}s");
+    }
+
+    private void GoToOverview()
+    {
+        if (ItemType.ToLower() == "treatment")
+        {
+            NavManager.NavigateTo("/PatientDetail");
+        }
+        else
+        {
+            NavManager.NavigateTo($"/{ItemType}s");
+        }
+    }
+}
+
+<div class="confirmation-container mt-5">
+    <div class="confirmation-container">
+        <h3 class="confirmation-message">The @ItemType has been added.</h3>
+        <button @onclick="GoToAddNew" class="confirmation-button">Add Another @ItemType</button>
+        <button @onclick="GoToOverview" class="confirmation-button">Go to @ItemType Overview</button>
+    </div>
+</div>
